@@ -12,23 +12,42 @@ class State {
     }
 }
 
+class Ship {
+    constructor (id,hp,ap,state) {
+        this.id = id;
+        this.hp = hp;
+        this.ap = ap;
+        this.state = state;
+    }
+    export() {
+        let ship = new Ship();
+        ship.hp = this.hp;
+        ship.ap = this.ap;
+        ship.state = this.state.export();
+        return ship;
+    }
+}
+
 // For now it is only an auxiliary class to hold data in here 
 // so no need to create a model file for it
 class Player {
-    constructor(id,name,state) {
+    constructor(id,name,state, ship) {
         this.id = id;        
         this.name = name;
         this.state= state;
+        this.ship = ship;
     }
     export() {
         let player = new Player();
         player.name = this.name;
         player.state = this.state.export();
+        player.ship = this.ship.export();
         return player;
     }
 }
 
 class Game {
+    static maxShipHP = 20;
     constructor(id,turn,state,player,opponents) {
         this.id = id;
         this.turn = turn;
@@ -53,11 +72,15 @@ class Game {
         try {
             let [dbPlayers] = await pool.query(`Select * from user 
             inner join user_game on ug_user_id = usr_id
-             inner join user_game_state on ugst_id = ug_state_id
+            inner join user_game_state on ugst_id = ug_state_id
+            left join ship on sh_user_game_id = ug_id
+            left join ship_state on sh_state_id = shs_id
             where ug_game_id=?`, [game.id]);
             for (let dbPlayer of dbPlayers) {
                 let player = new Player(dbPlayer.ug_id,dbPlayer.usr_name,
-                            new State(dbPlayer.ugst_id,dbPlayer.ugst_state) );
+                            new State(dbPlayer.ugst_id,dbPlayer.ugst_state),
+                            new Ship(dbPlayer.sh_id, dbPlayer.sh_hp,dbPlayer.sh_ap,
+                                new State(dbPlayer.shs_id,dbPlayer.shs_state)));
                 if (dbPlayer.usr_id == userId) game.player = player;
                 else game.opponents.push(player);
             }
@@ -168,24 +191,11 @@ class Game {
             let dbGame = dbGames[0];
             if (dbGame.gm_state_id != 1) 
                 return {status:400, result:{msg:"Game not waiting for other players"}};
+           
+            // We join the game but the game still has not started, that will be done outside
+            let [result] = await pool.query(`Insert into user_game (ug_user_id,ug_game_id,ug_state_id) values (?,?,?)`,
+                [userId, gameId, 1]);
             
-            // Randomly determine who starts    
-            let myTurn = (Math.random() < 0.5);
-
-            // add the user to the game, if it is my turn I start with state 2 (Playing)
-            await pool.query(`Insert into user_game (ug_user_id,ug_game_id,ug_state_id) values (?,?,?)`,
-                 [userId, gameId, (myTurn)?2:1]);
-            // If this player is not the first we need to change the state of the opponent to 2
-            if (!myTurn) {
-                // Getting opponents (only 1 exists)
-                let [dbPlayers] = await pool.query(`Select * from user_game 
-                    where ug_game_id=? and ug_user_id!=?`, [gameId, userId]);
-                let player2 = dbPlayers[0];
-                await pool.query(`Update user_game set ug_state_id=? where ug_id = ?`,
-                            [2,player2.ug_id]);
-            }
-            await pool.query(`Update game set gm_state_id=? where gm_id = ?`,[2,gameId]);
-
             return {status:200, result: {msg: "You joined the game."}};
         } catch (err) {
             console.log(err);

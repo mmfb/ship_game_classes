@@ -8,13 +8,13 @@ class ScoreBoard {
         this.game = game;
     }
     draw() {
-        fill(100,200,100);
+        fill(100,100,200);
         stroke(0,0,0);
         rect (SB_POSX,SB_POSY,SB_WIDTH,SB_HEIGHT,5,5,5,5);
-        fill(0,0,0);
+        fill(255);
         textAlign(LEFT,CENTER);
-        textSize(16);
-        textStyle(NORMAL);
+        textSize(18);
+        textStyle(BOLD);
         text("Turn: "+this.game.turn,SB_POSX+10,SB_POSY+SB_HEIGHT/4)
         text("Player: "+this.game.player.name,SB_POSX+10,SB_POSY+2*SB_HEIGHT/4);
         text("Opponent: "+this.game.opponents[0].name,SB_POSX+10,SB_POSY+3*SB_HEIGHT/4);

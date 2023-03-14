@@ -1,14 +1,26 @@
 // All the variables for the game UI
 // we only have one game info so everything is static
 class GameInfo  {
-    static width = 1200;
-    static height = 600;
-
-    static game;
-    static scoreBoard;
+    // settings variables
+    static width = 1400;
+    static height = 750;
 
     static loading = true;
 
+    // data
+    static game;
+    static images = {};
+    static sounds = {};
+    //TODO: T2-2: Create matchDecks variable
+    static matchDecks;
+
+    // renderers
+    static scoreBoard;
+    //TODO: T2-2: Create playerDeck and oppDeck variables 
+    static playerDeck;
+    static oppDeck;
+    
+    //TODO: T3-2- Create the playerShip and oppShip variables
 
     // buttons
     static endturnButton;
